@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kafka.connect.json;
+package com.oportun.nullawarejson;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,6 +41,7 @@ import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -107,6 +108,14 @@ public class JsonConverterTest {
     @Test
     public void intToConnect() {
         assertEquals(new SchemaAndValue(Schema.INT32_SCHEMA, 12), converter.toConnectData(TOPIC, "{ \"schema\": { \"type\": \"int32\" }, \"payload\": 12 }".getBytes()));
+    }
+
+    @Test
+    public void intToConnectNull() {
+        assertEquals(
+                new SchemaAndValue(Schema.OPTIONAL_INT32_SCHEMA, null),
+                converter.toConnectData(TOPIC, "{ \"schema\": { \"type\": \"int32\", \"optional\": true }, \"payload\": null }".getBytes())
+        );
     }
 
     @Test
@@ -289,7 +298,7 @@ public class JsonConverterTest {
         String msg = "{ \"schema\": { \"type\": \"bytes\", \"name\": \"org.apache.kafka.connect.data.Decimal\", \"version\": 1, \"optional\": true, \"default\": \"AJw=\", \"parameters\": { \"scale\": \"2\" } }, \"payload\": null }";
         SchemaAndValue schemaAndValue = converter.toConnectData(TOPIC, msg.getBytes());
         assertEquals(schema, schemaAndValue.schema());
-        assertEquals(reference, schemaAndValue.value());
+        assertNull(schemaAndValue.value());
     }
 
     @Test
@@ -363,7 +372,7 @@ public class JsonConverterTest {
         String msg = "{ \"schema\": { \"type\": \"int32\", \"name\": \"org.apache.kafka.connect.data.Date\", \"version\": 1, \"optional\": true, \"default\": 0 }, \"payload\": null }";
         SchemaAndValue schemaAndValue = converter.toConnectData(TOPIC, msg.getBytes());
         assertEquals(schema, schemaAndValue.schema());
-        assertEquals(reference, schemaAndValue.value());
+        assertNull(schemaAndValue.value());
     }
 
     @Test
@@ -406,7 +415,7 @@ public class JsonConverterTest {
         String msg = "{ \"schema\": { \"type\": \"int32\", \"name\": \"org.apache.kafka.connect.data.Time\", \"version\": 1, \"optional\": true, \"default\": 0 }, \"payload\": null }";
         SchemaAndValue schemaAndValue = converter.toConnectData(TOPIC, msg.getBytes());
         assertEquals(schema, schemaAndValue.schema());
-        assertEquals(reference, schemaAndValue.value());
+        assertNull(schemaAndValue.value());
     }
 
     @Test
@@ -448,7 +457,7 @@ public class JsonConverterTest {
         String msg = "{ \"schema\": { \"type\": \"int64\", \"name\": \"org.apache.kafka.connect.data.Timestamp\", \"version\": 1,  \"optional\": true, \"default\": 42 }, \"payload\": null }";
         SchemaAndValue schemaAndValue = converter.toConnectData(TOPIC, msg.getBytes());
         assertEquals(schema, schemaAndValue.schema());
-        assertEquals(new java.util.Date(42), schemaAndValue.value());
+        assertNull(schemaAndValue.value());
     }
 
     // Schema metadata
@@ -648,6 +657,29 @@ public class JsonConverterTest {
                                                    .field("field4", Schema.BOOLEAN_SCHEMA).build();
         Struct input = new Struct(inputSchema).put("field1", true).put("field2", "string2").put("field3", "string3").put("field4", false);
         assertStructSchemaEqual(schema, input);
+    }
+
+    @Test
+    public void structBySchemaToJson() {
+        Schema sBool = SchemaBuilder.bool().optional().defaultValue(true).build();
+        Schema sString = SchemaBuilder.string().optional().defaultValue("").build();
+        Schema sInt = SchemaBuilder.int32().optional().defaultValue(11).build();
+
+        Schema schema = SchemaBuilder.struct()
+                .field("t_bool", sBool)
+                .field("t_string", sString)
+                .field("t_int", sInt)
+                .build();
+
+        Struct value = new Struct(schema)
+                .put("t_bool", null)
+                .put("t_string", null)
+                .put("t_int", null);
+
+
+        String res = new String(converter.fromConnectData(TOPIC, schema, value), StandardCharsets.UTF_8);
+        String exp = "{\"schema\":{\"type\":\"struct\",\"fields\":[{\"type\":\"boolean\",\"optional\":true,\"default\":true,\"field\":\"t_bool\"},{\"type\":\"string\",\"optional\":true,\"default\":\"\",\"field\":\"t_string\"},{\"type\":\"int32\",\"optional\":true,\"default\":11,\"field\":\"t_int\"}],\"optional\":false},\"payload\":{\"t_bool\":null,\"t_string\":null,\"t_int\":null}}";
+        assertEquals(exp, res);
     }
 
 

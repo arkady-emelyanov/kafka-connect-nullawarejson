@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kafka.connect.json;
+package com.oportun.nullawarejson;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -562,12 +562,12 @@ public class JsonConverter implements Converter, HeaderConverter {
      */
     private JsonNode convertToJson(Schema schema, Object value) {
         if (value == null) {
-            if (schema == null) // Any schema is valid and we don't have a default, so treat this as an optional schema
+            // Any schema is valid and we don't have a default, so treat this as an optional schema
+            // CHANGE: Optional null fields are always nulls
+            if (schema == null || schema.isOptional())
                 return null;
             if (schema.defaultValue() != null)
                 return convertToJson(schema, schema.defaultValue());
-            if (schema.isOptional())
-                return JSON_NODE_FACTORY.nullNode();
             throw new DataException("Conversion error: null value for field that is required and has no default value");
         }
 
@@ -661,7 +661,12 @@ public class JsonConverter implements Converter, HeaderConverter {
                         throw new DataException("Mismatching schema.");
                     ObjectNode obj = JSON_NODE_FACTORY.objectNode();
                     for (Field field : schema.fields()) {
-                        obj.set(field.name(), convertToJson(field.schema(), struct.get(field)));
+                        // CHANGE: Optional null fields are always nulls
+                        if (field.schema().isOptional()) {
+                            obj.set(field.name(), convertToJson(field.schema(), struct.getWithoutDefault(field.name())));
+                        } else {
+                            obj.set(field.name(), convertToJson(field.schema(), struct.get(field)));
+                        }
                     }
                     return obj;
                 }
@@ -680,11 +685,14 @@ public class JsonConverter implements Converter, HeaderConverter {
         if (schema != null) {
             schemaType = schema.type();
             if (jsonValue == null || jsonValue.isNull()) {
-                if (schema.defaultValue() != null)
-                    return schema.defaultValue(); // any logical type conversions should already have been applied
-                if (schema.isOptional())
+                if (schema.isOptional()) {
+                    // CHANGE: Optional null fields are always nulls
                     return null;
-                throw new DataException("Invalid null value for required " + schemaType +  " field");
+                }
+                if (schema.defaultValue() != null) {
+                    return schema.defaultValue();
+                }
+                throw new DataException("Invalid null value for required " + schemaType + " field");
             }
         } else {
             switch (jsonValue.getNodeType()) {
