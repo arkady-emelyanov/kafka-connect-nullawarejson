@@ -1,13 +1,13 @@
-# Kafka Connect NullAwareJsonSerializer
-
-WIP.
+# Kafka Connect NullAwareJsonConverter
 
 Isolated implementation of: https://github.com/apache/kafka/pull/12126
 Optional NULL fields will stay NULLs.
 
 # Usage
 
-Use Converter in the Debezium Connector configuration:
+Place jar to the Connect `plugin.path`.
+
+Update Debezium connector configuration as following:
 ```
 ...
 "key.converter": "com.oportun.nullawarejson.JsonConverter",
@@ -15,7 +15,7 @@ Use Converter in the Debezium Connector configuration:
 ...
 ```
 
-Use Converter in the S3 sink Connector configuration:
+Update S3 sink connector configuration as following:
 ```
 ...
 "key.converter": "com.oportun.nullawarejson.JsonConverter",
@@ -25,4 +25,4 @@ Use Converter in the S3 sink Connector configuration:
 
 # Configuration Options
 
-None.
+Same as original JsonConverter.
