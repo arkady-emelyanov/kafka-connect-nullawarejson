@@ -1,6 +1,6 @@
 # Kafka Connect NullAwareJsonConverter
 
-NullAwareJsonConverter is same as the JsonConverter one bundled with Kafka, but with updated behavior:
+NullAwareJsonConverter is same as the JsonConverter bundled with Kafka, but with updated behavior:
 **Any optional field with NULL value stays NULL**.
 
 For more information: [click here](https://cwiki.apache.org/confluence/display/KAFKA/KIP-581%3A+Value+of+optional+null+field+which+has+default+value).
