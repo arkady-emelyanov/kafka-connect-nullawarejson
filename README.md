@@ -1,25 +1,25 @@
 # Kafka Connect NullAwareJsonConverter
 
-Isolated implementation of: https://github.com/apache/kafka/pull/12126
-Optional NULL fields will stay NULLs.
+NullAwareJsonConverter Converter is same as the JsonConverter one bundled with Kafka, but with updated behavior:
+**Any optional field with NULL value stays NULL**.
+
+For more information: [click here](https://cwiki.apache.org/confluence/display/KAFKA/KIP-581%3A+Value+of+optional+null+field+which+has+default+value).
 
 # Usage
 
-Place jar to the Connect `plugin.path`.
+Place jar to the `plugin.path` on every Connect worker node.
+Either provide global configuration options (e.g. `connect-distributed.properties`):
 
-Update Debezium connector configuration as following:
-```
-...
-"key.converter": "com.oportun.nullawarejson.JsonConverter",
-"value.converter": "com.oportun.nullawarejson.JsonConverter",
-...
+```properties
+key.converter=com.oportun.nullawarejson.JsonConverter
+value.converter=com.oportun.nullawarejson.JsonConverter
 ```
 
-Update S3 sink connector configuration as following:
+Or provide configuration explicitly for Debezium and S3 Sink connectors via Json:
 ```
 ...
-"key.converter": "com.oportun.nullawarejson.JsonConverter",
-"value.converter": "com.oportun.nullawarejson.JsonConverter",
+"key.converter": "com.oportun.nullawarejson.JsonConverter"
+"value.converter": "com.oportun.nullawarejson.JsonConverter"
 ...
 ```
 
